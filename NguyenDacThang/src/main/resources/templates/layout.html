@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initialscale=1.0">
+    <link >
+    <link th:fragment="link-css" rel="stylesheet"
+          th:href="@{/css/bootstrap.min.css}">
+    <link th:fragment="custom-css" rel="stylesheet"
+          th:href="@{~/css/style.css}">
+    <title>My App</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+<header th:fragment="header">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">HUTECH</a>
+            <button class="navbar-toggler" type="button" data-bstoggle="collapse"
+                    data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse"
+                 id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/books">List Book</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/books/add">Add Book</a></li>
+                </ul>
+                <form class="position-relative" action="/books/search" method="GET">
+                    <div class="input-group">
+                        <input autocomplete="off" class="form-control me-2" type="search" name="search" id="search-input" placeholder="Tìm kiếm tại đây" aria-label="Search" data-source="/books/autocomplete">
+                        <button class="btn btn-outline-success" type="submit">Tìm kiếm</button>
+                    </div>
+                    <ul id="autocompleteList" class="autocomplete-list position-absolute w-100 mt-1"
+                        style="cursor: pointer; display: none; z-index: 1000; background-color: white;
+                         list-style-type: none; border: 1px solid #ccc; max-height: 200px; overflow-y: auto; padding-left: 0;"></ul>
+                </form>
+            </div>
+        </div>
+    </nav>
+</header>
+<div class="container">
+    <div th:fragment="content"></div>
+</div>
+<footer th:fragment="footer" class="footer mt-auto py-3 bg-light">
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(function () {
+            $('#search-input').on('input', function () {
+                var searchTerm = $(this).val();
+                if (searchTerm.length >= 1) {
+                    $.ajax({
+                        url: $(this).data('source'),
+                        type: 'GET',
+                        data: {term: searchTerm, searchByAuthor: true},
+                        success: function (response) {
+                            if (response.length > 0) {
+                                var suggestions = {};
+                                $('#autocompleteList').empty();
+                                response.forEach(function (item) {
+                                    var isMatched = false;
+
+                                    if (item.author.toLowerCase().includes(searchTerm.toLowerCase())) {
+                                        suggestions[item.author] = item.author;
+                                        isMatched = true;
+                                    }
+
+                                    if (item.title && item.title.toLowerCase().includes(searchTerm.toLowerCase())) {
+                                        suggestions[item.title] = item.title;
+                                        isMatched = true;
+                                    }
+                                });
+
+                                Object.values(suggestions).forEach(function (suggestion) {
+                                    var listItem = $('<li>').text(suggestion);
+                                    listItem.on('click', function () {
+                                        var searchValue = $(this).text();
+                                        window.location.href = '/books/search?search=' + encodeURIComponent(searchValue);
+                                    });
+                                    $('#autocompleteList').append(listItem);
+                                });
+
+                                if (Object.keys(suggestions).length > 0) {
+                                    $('#autocompleteList').show();
+                                } else {
+                                    $('#autocompleteList').hide();
+                                }
+                            } else {
+                                $('#autocompleteList').hide();
+                            }
+                        },
+                        error: function () {
+                            $('#autocompleteList').empty();
+                            $('#autocompleteList').hide();
+                        }
+                    });
+                } else {
+                    $('#autocompleteList').hide();
+                }
+            });
+        });
+    </script>
+</footer>
+</body>
+</html>
